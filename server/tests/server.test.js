@@ -7,7 +7,7 @@ const {Todo} = require('./../models/todo');
 const {User} = require('./../models/user');
 const {todos, populateTodos, users, populateUsers} = require('./seed/seed');
 
-// beforeEach(populateUsers);
+beforeEach(populateUsers);
 beforeEach(populateTodos);
 
 describe('POST /todos', () => {
@@ -275,4 +275,23 @@ describe('POST /users/login', () => {
       request(app)
           // incomplete
   })
+});
+
+describe('DELETE /users/me/token', () => {
+  it('should delete user when valid token is passed', (done) => {
+    request(app)
+      .delete('/users/me/token')
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(401)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+          User.findById(users[0]._id).then((user) => {
+              expect(user.tokens.length).toBe(0);
+              done();
+          }).catch((e) => done(e));
+        });
+      });
 });
