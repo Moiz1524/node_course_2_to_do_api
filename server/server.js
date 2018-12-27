@@ -9,6 +9,7 @@ var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 var {authenticate} = require('./middlewares/authenticate');
 
+
 const port = process.env.PORT;
 var app = express();
 
@@ -34,6 +35,7 @@ app.post('/todos', (req, res) => {
 
   todo.save().then((doc) => {
     res.send(doc);
+    console.log('Response sent');
   }, (e) => {
     res.status(400).send(e);
   });
@@ -107,13 +109,32 @@ app.patch('/todos/:id', (req,res) => {
   })
 });
 
-
-
-
 app.get('/users/me', authenticate, (req, res) => {
     res.send(req.user);
 });
 
+app.post('/users/login', (req, res) => {
+  var body = _.pick(req.body, ['email', 'password']);
+
+  User.findByCredentials(body.email, body.password).then((user) => {
+    // res.send(user);
+    return user.generateAuthToken().then((token) => {
+      res.header('x-auth', token).send(user);
+    });
+  }).catch((e) => {
+    res.status(400).send();
+  });
+  // res.send(body);
+});
+
+app.delete('/users/me/token', authenticate, (req, res) => {
+  req.user.removeToken(req.token).then(() => {
+    res.status(200).send();
+  }, () => {
+    res.status(400).send();
+  });
+
+});
 app.listen(port, () => {
   console.log(`Started on port ${port}`);
 });
